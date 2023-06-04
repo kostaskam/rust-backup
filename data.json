@@ -1,0 +1,14 @@
+[
+    {
+        "file": "a",
+        "current_file_path": "C:/Users/Kostas/Documents/test.exe",
+        "export_path": "C:/Users/Kostas/Documents/Backups",
+        "create_new_folder": 1
+    },
+    {
+        "file": "b",
+        "current_file_path": "C:/Users/Kostas/Documents/test2.exe",
+        "export_path": "C:/Users/Kostas/Documents/Backups",
+        "create_new_folder": 1 
+    }
+]
