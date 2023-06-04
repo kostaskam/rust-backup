@@ -2,7 +2,7 @@
 It parses the paths of the items that are to be saved from data.json and saves them to the "Export_Path" you give it in the json.
 data.json shall be in the same directory with the executable.
 
-data.json: 
+data.json:  
     **"file": "a",**  
         _// the filename or a short description, optional._  
     **"current_file_path": "C:/Users/User/Documents/test.exe",**  
