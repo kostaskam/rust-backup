@@ -4,7 +4,7 @@ data.json shall be in the same directory with the executable.
 
 data.json: 
     **"file": "a",**  
-        _// the filename or a short description, optional._  
+<pre>        _// the filename or a short description, optional._  </pre>
     **"current_file_path": "C:/Users/User/Documents/test.exe",**  
         _// the path for the file you want to keep a backup._  
     **"export_path": "C:/Users/User/Documents/Backups",**  
