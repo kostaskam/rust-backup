@@ -3,12 +3,12 @@
         "file": "a",
         "current_file_path": "C:/Users/User/Documents/test_1.txt",
         "export_path": "C:/Users/User/Documents/Backups",
-        "create_new_folder": 1
+        "create_new_folder": true
     },
     {
         "file": "b",
         "current_file_path": "C:/Users/User/Documents/test_2.txt",
         "export_path": "C:/Users/User/Documents/Backups",
-        "create_new_folder": 1 
+        "create_new_folder": true
     }
 ]
