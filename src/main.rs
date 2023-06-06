@@ -12,6 +12,7 @@ use std::io::{self, Read, Write, BufReader};
 use std::thread;
 use std::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
+use std::env::{self, current_exe};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Item {
@@ -21,7 +22,7 @@ struct Item {
     //Current_Path: Vec<String>,
     current_file_path: String,
     export_path: String,
-    create_new_folder: u32
+    create_new_folder: bool
 }
 
 fn main() {
@@ -31,6 +32,7 @@ fn main() {
 }
 
 fn run() -> Result<()> {
+    println!("current working path: {:?}",  current_exe());
     let mut file = File::open("data.json").with_context(|| "Failed to open file")?;
     let mut json_data = String::new();
     file.read_to_string(&mut json_data).with_context(|| "Failed to read file")?;
@@ -55,24 +57,24 @@ fn run() -> Result<()> {
     for item in items {
 
         let source_path = Path::new(&item.current_file_path);
-        let destination_path = Path::new(&item.export_path);//.join(source_path.file_name().unwrap());
+        let destination_path = Path::new(&item.export_path);
 
-        if item.create_new_folder == 1 { 
+        if item.create_new_folder { 
             let current_date = Local::now();
 
-            //let formatted_year = format!("{:04}",current_date.year());
             let formatted_year = current_date.year().to_string();
             let formatted_month = format!("{:02}", current_date.month());
             let formatted_day = format!("{:02}", current_date.day());
             let formatted_hour = format!("{:02}", current_date.hour());
-            let formatted_minute = current_date.minute().to_string();
-
-            let folder_to_create = destination_path.join( format!("{}_{}_{}_{}_{}", formatted_day, 
+            let formatted_minute = format!("{:02}", current_date.minute());
+            
+            // Create the new folder name with date format dd_mm_yyyy_hh_mm.
+            let folder_to_create = destination_path.join( format!("{}_{}_{}_{}_{}", 
+                                                                formatted_day, 
                                                                 formatted_month, 
                                                                 formatted_year,
                                                                 formatted_hour,
-                                                                formatted_minute,
-                                                                ));     
+                                                                formatted_minute));     
             //Check if folder not exists, then create it.
             if !folder_to_create.exists() {
                 println!("Folder {:?} does not exist!",folder_to_create);
@@ -81,20 +83,26 @@ fn run() -> Result<()> {
 
             }
 
-            // Leave here for now, but check why it takes so long to copy a 1mb file.
-            //progress_bar(&source_path, &folder_to_create.join(source_path.file_name().unwrap()))?;
-            // Last but not least, copy the items to the destination folder.
-            println!("copy file {:?} from: {:?} to directory: {:?}", item.file, source_path, destination_path);
-            copy_file(source_path, &folder_to_create.join(source_path.file_name().unwrap()))?;
+            // Print info to user about what is gonna copied, where.
+            println!("\n\ncopy file {:?} from: {:?} to directory: {:?}", item.file, source_path, folder_to_create);
+
+            // Problem was the forgotten "thread::sleep", kudos to VangelisP.
+            progress_bar(&source_path, &folder_to_create.join(source_path.file_name().unwrap()))?;
         } else {
             println!("copy file {:?} from: {:?} to directory: {:?}", item.file, source_path, destination_path);
-            copy_file(source_path, &destination_path.join(source_path.file_name().unwrap()))?;
+            /* TODO:
+                BUG: Check why we get 'Error: Access Denied (os error 5)'
+                Maybe it has o do with the File::create.
+            */
+            progress_bar(&source_path, destination_path)?;
+            //copy_file(source_path, &destination_path.join(source_path.file_name().unwrap()))?;
         }
         
     }
     Ok(())
 }
 
+/* TODO: Check if we will use the following 2 fn's or not. */
 fn copy_file(source: &Path, destination: &PathBuf) -> Result<()> {
     fs::copy(source, destination)?;
     Ok(())
@@ -105,14 +113,17 @@ fn create_directory(path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-// Check why it takes so long to copy-paste a 1mb file.
-fn progress_bar(source_path: &Path, destination_path: &PathBuf) -> io::Result<()> {
+/* TODO: 
+    BUG: Check why we get 'Error: Access Denied (os error 5)'
+    Maybe it has o do with the File::create.
+*/
+fn progress_bar(source_path: &Path, destination_path: &Path) -> io::Result<()> {
     let source_file = File::open(source_path)?;
     let metadata = fs::metadata(source_path)?;
     let total_size = metadata.len();
     
     let mut source_reader = BufReader::new(source_file);
-    let mut destination_file = File::create(destination_path)?;
+    let mut destination_file = File::create(destination_path)?;//fs::create_dir(destination_path);//File::create(destination_path)?;
     
     let progress_bar = ProgressBar::new(total_size);
     progress_bar.set_style(
@@ -131,9 +142,6 @@ fn progress_bar(source_path: &Path, destination_path: &PathBuf) -> io::Result<()
         
         destination_file.write_all(&buffer[..bytes_read])?;
         progress_bar.inc(bytes_read as u64);
-        
-        // Simulate delay for each chunk of data copied
-        thread::sleep(Duration::from_millis(10));
     }
     
     progress_bar.finish_with_message("File copied successfully");
