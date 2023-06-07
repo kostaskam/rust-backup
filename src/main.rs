@@ -5,6 +5,7 @@
 use anyhow::{Result, Context};
 use serde::{Deserialize, Serialize};
 use std::array;
+use std::borrow::Borrow;
 use std::fs::{self, File, copy};
 use std::path::{Path, PathBuf};
 use chrono::{self, Local, DateTime, TimeZone, Datelike, Timelike};
@@ -83,11 +84,37 @@ fn run() -> Result<()> {
 
             }
 
-            // Print info to user about what is gonna copied, where.
-            println!("\n\ncopy file {:?} from: {:?} to directory: {:?}", item.file, source_path, folder_to_create);
+            //check if is individual file.
+            if source_path.is_file(){
 
-            // Problem was the forgotten "thread::sleep", kudos to VangelisP.
-            progress_bar(&source_path, &folder_to_create.join(source_path.file_name().unwrap()))?;
+                // Print info to user about what is gonna copied, where.
+                println!("\n\ncopy file {:?} from: {:?} to directory: {:?}", item.file, source_path, folder_to_create);
+                println!("{:?}",source_path.file_name().unwrap());
+                
+                // Problem was the forgotten "thread::sleep", kudos to VangelisP.
+                progress_bar(&source_path, &folder_to_create.join(source_path.file_name().unwrap()))?;
+                
+            // else check if we have a whole directory
+            } else if source_path.is_dir() {
+
+                /*  
+                    User provided a whole directory to be copied. 
+                    Iterate the files of the directory and copy them.
+                */
+                let files = fs::read_dir(source_path).unwrap();
+                for file in files {
+
+                    let file_borrow = file.as_ref().unwrap();
+                    let path = file_borrow.path();
+                    let filename = path.file_name().unwrap();
+                    let file_path = file.unwrap().path();
+                    println!("\n\ncopy from: {:?} to directory: {:?}", file_path, folder_to_create.join(filename));
+                    progress_bar(&file_path, &folder_to_create.join(filename))?; 
+                }
+            } else {
+                display_wrong_path_error("current_file_path".to_string(), source_path);
+            }
+
         } else {
             println!("copy file {:?} from: {:?} to directory: {:?}", item.file, source_path, destination_path);
             /* TODO:
@@ -95,22 +122,35 @@ fn run() -> Result<()> {
                 Maybe it has o do with the File::create.
             */
             progress_bar(&source_path, destination_path)?;
-            //copy_file(source_path, &destination_path.join(source_path.file_name().unwrap()))?;
         }
         
     }
     Ok(())
 }
 
-/* TODO: Check if we will use the following 2 fn's or not. */
-fn copy_file(source: &Path, destination: &PathBuf) -> Result<()> {
-    fs::copy(source, destination)?;
-    Ok(())
-}
 
-fn create_directory(path: &PathBuf) -> Result<()> {
-    fs::create_dir(path)?;
-    Ok(())
+// !!!!!!! TODO: try to move functions into individual .rs files, so we have a "clean" main.rs file. !!!!!!!
+
+
+/* 
+    Parameters: 
+        key: String,
+        source_path: &Path
+
+    Description: 
+        Below function prints an error message about incorrect values.
+*/
+fn display_wrong_path_error(key: String, source_path: &Path) {
+    
+    let error_message = format!(" Make sure {key} value is correct and exists: ");
+    let error_message_len = error_message.len();
+    let source_path_len = source_path.display().to_string().len();
+    let total_str_size = error_message_len+source_path_len+5;
+    let row_with_dashes = (0..total_str_size).map(|_| "-").collect::<String>();
+
+    println!("\n\n{}", row_with_dashes);
+    println!("|{}{:?} |", error_message, source_path);
+    println!("{}", row_with_dashes);
 }
 
 /* TODO: 
@@ -146,5 +186,16 @@ fn progress_bar(source_path: &Path, destination_path: &Path) -> io::Result<()> {
     
     progress_bar.finish_with_message("File copied successfully");
     
+    Ok(())
+}
+
+/* TODO: Check if we will use the following 2 fn's or not. */
+fn copy_file(source: &Path, destination: &PathBuf) -> Result<()> {
+    fs::copy(source, destination)?;
+    Ok(())
+}
+
+fn create_directory(path: &PathBuf) -> Result<()> {
+    fs::create_dir(path)?;
     Ok(())
 }
