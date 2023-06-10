@@ -14,6 +14,15 @@ use std::path::{Path, PathBuf};
 use std::io::Read;
 use std::env::{current_exe};
 use fs_extra::*;
+use clap::{Parser, Arg};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Full path of json to parse
+    #[arg(short, long, default_value_t = String::from("data.json"))]
+    Path: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Item {
@@ -36,7 +45,12 @@ fn main() {
 fn run() -> Result<()> {
     
     println!("current working path: {:?}",  current_exe());
-    let mut file = File::open("data.json").with_context(|| "Failed to open file")?;
+    
+    let _args = Args::parse();
+    let json_file_args = &_args.Path;
+
+    // Open json file. if not provided, defaults back to data.json
+    let mut file = File::open(json_file_args).with_context(|| format!("Failed to open file: {}", json_file_args))?;//.with_context(|| "Failed to open file: {:?}")?;
     let mut json_data = String::new();
     file.read_to_string(&mut json_data).with_context(|| "Failed to read file")?;
     
