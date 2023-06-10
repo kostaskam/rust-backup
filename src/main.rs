@@ -7,14 +7,11 @@ mod cp_fns;
 use error_msgs::*;
 use cp_fns::*;
 use anyhow::{Result, Context};
-use fs_extra::dir::{copy_with_progress, CopyOptions};
+use fs_extra::dir::CopyOptions;
 use serde::{Deserialize, Serialize};
-use std::borrow::Borrow;
-use std::fs::{self, File};
+use std::fs::File;
 use std::path::{Path, PathBuf};
-use chrono::{self, Local, DateTime, TimeZone, Datelike, Timelike};
-use std::io::{self, Read, Write, BufReader};
-use indicatif::{ProgressBar, ProgressStyle};
+use std::io::Read;
 use std::env::{current_exe};
 use fs_extra::*;
 
@@ -43,17 +40,6 @@ fn run() -> Result<()> {
     let mut json_data = String::new();
     file.read_to_string(&mut json_data).with_context(|| "Failed to read file")?;
     
-    /*Multiple JSON object parsing.
-    E.G:
-        [
-            {
-                "file": "a"
-            },
-            {
-                "file": "b",
-            }
-        ]
-    */
     let _data: Vec<Data> = serde_json::from_str(&json_data).expect("Failed to parse JSON_data");
 
     // Create a new instance of the options that we gonna pass to copy.
@@ -64,18 +50,12 @@ fn run() -> Result<()> {
     let _dir_handle = |process_info: fs_extra::dir::TransitProcess|  {
         println!("File name: {:?}", process_info.file_name);
         show_progress_bar(process_info.total_bytes, process_info.file_bytes_copied);
-        println!("mallon ta deixnei polles fores giati eimaste mesa stin loupa.");
         dir::TransitProcessResult::ContinueOrAbort
     };
 
     // Create the Progress Handler. 
     let _norm_handle = |process_info: TransitProcess|  {
-        println!("dir_name: {:?}", process_info.dir_name);
-        println!("file_name: {:?}", process_info.file_name);
-        println!("total_bytes: {:?}", process_info.total_bytes);
-        println!("file_total_bytes: {:?}", process_info.file_total_bytes);
         show_progress_bar(process_info.total_bytes, process_info.file_bytes_copied);
-        println!("mallon ta deixnei polles fores giati eimaste mesa stin loupa - norm_handle.");
         dir::TransitProcessResult::ContinueOrAbort
     };
 
@@ -94,19 +74,20 @@ fn run() -> Result<()> {
 
                 // Print info to user about what is gonna copied, where.
                 println!("\n\ncopy file {:?} from: {:?} to directory: {:?}", source_path.file_name().unwrap(), source_path, destination_path);
-                println!("{:?}",source_path.file_name().unwrap());
                 
                 // Problem was the forgotten "thread::sleep", kudos to VangelisP.
                 single_file_copy_with_progress_bar(&source_path, &destination_path.join(source_path.file_name().unwrap()))?;
-                //copy_with_progress(&source_path, destination_path, &options, _dir_handle)?;
                 
             // else check if we have a whole directory
             } else if source_path.is_dir() {
 
                 /*  
                     User provided a whole directory to be copied. 
-                    Iterate the files of the directory and copy them recursively.
+                    Print info to user about what is gonna copied, where and
+                    iterate the files of the directory and copy them recursively.
+
                 */
+                println!("\n\ncopying content of Folder: {:?} \n    from: {:?} to directory: {:?}", source_path.file_name().unwrap(), source_path, destination_path);
                 copy_items_with_progress(&[source_path], &destination_path, &options, _norm_handle)?;
 
             } else {
