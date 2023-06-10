@@ -1,14 +1,23 @@
 [
     {
-        "file": "a",
-        "current_file_path": "C:/Users/User/Documents/test_1.txt",
-        "export_path": "C:/Users/User/Documents/Backups",
-        "create_new_folder": true
-    },
-    {
-        "file": "b",
-        "current_file_path": "C:/Users/User/Documents/test_2.txt",
-        "export_path": "C:/Users/User/Documents/Backups",
-        "create_new_folder": true
+        "create_new_folder": true,
+        "files": [
+            {
+                "current_file_path": "C:/Users/Users/Documents/file_1.txt",
+                "export_path": "C:/Users/Users/Documents/Backups"
+            },
+            {
+                "current_file_path": "C:/Users/Users/Documents/file_2.txt",
+                "export_path": "C:/Users/Users/Documents/Backups"
+            },
+            {
+                "current_file_path": "C:/Users/Users/Documents/file_3.exe",
+                "export_path": "C:/Users/Users/Documents/Backups"
+            },    
+            {
+                "current_file_path": "C:/Users/Users/Downloads/EntireFolder",
+                "export_path": "C:/Users/Users/Documents/Backups"
+            }
+        ]
     }
 ]
